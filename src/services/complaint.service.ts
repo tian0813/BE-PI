@@ -14,12 +14,37 @@ class ComplaintService {
     this.complaintRepository = complaintRepository;
   }
 
-  async getAllComplaints(
+  async getAllComplaintsAdmin(
+    pagination?: PaginationParams,
+    filters?: ComplaintFilters
+  ): Promise<PaginatedResult<Complaint> | string> {
+    const data = await this.complaintRepository.findAllByAdmin(pagination, filters);
+    if (typeof data === "string") return data;
+
+    const { complaints, total } = data;
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 12;
+    const lastPage = Math.ceil(total / limit);
+
+    return {
+      data: complaints,
+      meta: {
+        total,
+        page,
+        lastPage,
+        hasNextPage: page < lastPage,
+        hasPrevPage: page > 1,
+      },
+    };
+  }
+
+
+  async getAllComplaintsByUser(
     userId: number,
     pagination?: PaginationParams,
     filters?: ComplaintFilters
   ): Promise<PaginatedResult<Complaint> | string> {
-    const data = await this.complaintRepository.findAll(
+    const data = await this.complaintRepository.findAllByUser(
       userId,
       pagination,
       filters
@@ -48,10 +73,9 @@ class ComplaintService {
   }
 
   async getComplaintById(
-    id: number,
-    userId: number
+    idComplaint: number
   ): Promise<Complaint | string> {
-    const complaint = await this.complaintRepository.findById(id, userId);
+    const complaint = await this.complaintRepository.findById(idComplaint);
     if (typeof complaint === "string") {
       return complaint;
     }
@@ -83,13 +107,11 @@ class ComplaintService {
   }
 
   async updateComplaint(
-    userId: number,
     id: number,
     complaintData: UpdateComplaintDto
   ): Promise<Complaint | string> {
     const existingComplaint = await this.complaintRepository.findById(
       id,
-      userId
     );
     if (typeof existingComplaint === "string") {
       return existingComplaint;
@@ -106,14 +128,12 @@ class ComplaintService {
 
     return result;
   }
-
+  
   async softDeleteComplaint(
     id: number,
-    userId: number
   ): Promise<Complaint | string> {
     const existingComplaint = await this.complaintRepository.findById(
       id,
-      userId
     );
     if (typeof existingComplaint === "string") {
       return existingComplaint;

@@ -16,7 +16,58 @@ class ComplaintRepository {
     this.prisma = prisma;
   }
 
-  async findAll(
+  // Tambahan di ComplaintRepository
+  async findAllByAdmin(
+    pagination?: PaginationParams,
+    filters?: ComplaintFilters
+  ): Promise<{ complaints: Complaint[]; total: number } | string> {
+    try {
+      const page = pagination?.page || 1;
+      const limit = pagination?.limit || 12;
+      const skip = (page - 1) * limit;
+
+      const where: Prisma.ComplaintWhereInput = {
+        isDeleted: false,
+        ...(filters?.search && {
+          OR: [
+            {
+              location: {
+                contains: filters.search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+            {
+              description: {
+                contains: filters.search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          ],
+        }),
+        ...(filters?.startDate && { createdAt: { gte: filters.startDate } }),
+        ...(filters?.endDate && { createdAt: { lte: filters.endDate } }),
+      };
+
+      const [complaints, total] = await Promise.all([
+        this.prisma.complaint.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { createdAt: "desc" },
+        }),
+        this.prisma.complaint.count({ where }),
+      ]);
+
+      return {
+        complaints: complaints.map(Complaint.fromEntity),
+        total,
+      };
+    } catch (error) {
+      return getErrorMessage(error);
+    }
+  }
+
+  async findAllByUser(
     userId: number,
     pagination?: PaginationParams,
     filters?: ComplaintFilters
@@ -74,15 +125,31 @@ class ComplaintRepository {
 
   async findById(
     id: number,
-    userId: number
   ): Promise<Complaint | null | string> {
+    console.log("id: ", id)
     try {
       const complaint = await this.prisma.complaint.findFirst({
         where: {
           id,
-          userId,
           isDeleted: false,
         } as Prisma.ComplaintWhereInput,
+      });
+
+      console.log("Complaint repo = ", complaint)
+
+      return complaint ? Complaint.fromEntity(complaint) : null;
+    } catch (error) {
+      return getErrorMessage(error);
+    }
+  }
+
+  async findByIdAdmin(id: number): Promise<Complaint | null | string> {
+    try {
+      const complaint = await this.prisma.complaint.findUnique({
+        where: {
+          id,
+          isDeleted: false,
+        },
       });
 
       return complaint ? Complaint.fromEntity(complaint) : null;
@@ -143,9 +210,9 @@ class ComplaintRepository {
         } as Prisma.ComplaintUpdateInput,
       });
 
-      return Complaint.fromEntity(complaint)
+      return Complaint.fromEntity(complaint);
     } catch (error) {
-      return getErrorMessage(error)
+      return getErrorMessage(error);
     }
   }
 }

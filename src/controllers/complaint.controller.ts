@@ -14,7 +14,11 @@ class ComplaintController {
     this.complaintService = complaintService;
   }
 
-  async getAllComplaints(req: AuthRequest, res: Response, next: NextFunction) {
+  async getAllComplaintsByAdmin(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       if (!req.user) {
         return res.status(500).json({
@@ -40,11 +44,67 @@ class ComplaintController {
           : undefined,
       };
 
-      const result = await this.complaintService.getAllComplaints(
-        req?.user.id,
+      const result = await this.complaintService.getAllComplaintsAdmin(
         pagination,
         filters
       );
+
+      console.log(result);
+
+      if (typeof result === "string") {
+        return res.status(400).json({
+          success: false,
+          message: result,
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: responses.successGetComplaints,
+        ...result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAllComplaintsByUser(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      if (!req.user) {
+        return res.status(500).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
+      const pagination: PaginationParams = {
+        page: req.query.page ? parseInt(req.query.page as string) : undefined,
+        limit: req.query.limit
+          ? parseInt(req.query.limit as string)
+          : undefined,
+      };
+
+      const filters: ComplaintFilters = {
+        search: req.query.search as string,
+        startDate: req.query.startDate
+          ? new Date(req.query.startDate as string)
+          : undefined,
+        endDate: req.query.endDate
+          ? new Date(req.query.endDate as string)
+          : undefined,
+      };
+
+      const result = await this.complaintService.getAllComplaintsByUser(
+        req.user.id,
+        pagination,
+        filters
+      );
+
+      console.log(result);
 
       if (typeof result === "string") {
         return res.status(400).json({
@@ -73,9 +133,12 @@ class ComplaintController {
       }
 
       const result = await this.complaintService.getComplaintById(
-        Number(req.params.id),
-        req.user.id
+        Number(req.params.idComplaint)
       );
+
+      console.log(result);
+      console.log(req.params.idComplaint);
+      console.log(req.user.id);
 
       if (typeof result === "string") {
         return res.status(400).json({
@@ -134,8 +197,6 @@ class ComplaintController {
         location: req.body.location,
         description: req.body.description,
         photo: uploadedImageUrl,
-        // photo: req.body.photo,
-        // status: req.body.status,
         email: req.user.email,
       });
 
@@ -195,8 +256,7 @@ class ComplaintController {
       };
 
       const result = await this.complaintService.updateComplaint(
-        req.user.id,
-        Number(req.params.id),
+        Number(req.params.idComplaint),
         updateData
       );
 
@@ -224,8 +284,7 @@ class ComplaintController {
       }
 
       const result = await this.complaintService.softDeleteComplaint(
-        Number(req.params.id),
-        req.user.id
+        Number(req.params.idComplaint)
       );
 
       if (typeof result === "string") {
