@@ -14,7 +14,7 @@ const complaintService = new ComplaintService(complaintRepository);
 const complaintController = new ComplaintController(complaintService);
 
 router.get("/", (req, res, next) =>
-  complaintController.getAllComplaintsByUser(req, res, next)
+  complaintController.getAllComplaints(req, res, next)
 );
 
 router.post("/", upload.single("photo"), (req, res, next) =>

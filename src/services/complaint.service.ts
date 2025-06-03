@@ -39,12 +39,12 @@ class ComplaintService {
   }
 
 
-  async getAllComplaintsByUser(
-    userId: number,
+  async getAllComplaints(
+    userId: number | null,
     pagination?: PaginationParams,
     filters?: ComplaintFilters
   ): Promise<PaginatedResult<Complaint> | string> {
-    const data = await this.complaintRepository.findAllByUser(
+    const data = await this.complaintRepository.findAll(
       userId,
       pagination,
       filters
@@ -128,7 +128,7 @@ class ComplaintService {
 
     return result;
   }
-  
+
   async softDeleteComplaint(
     id: number,
   ): Promise<Complaint | string> {

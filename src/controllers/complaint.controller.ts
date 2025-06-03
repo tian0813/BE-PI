@@ -14,11 +14,13 @@ class ComplaintController {
     this.complaintService = complaintService;
   }
 
-  async getAllComplaintsByAdmin(
+  async getAllComplaints(
     req: AuthRequest,
     res: Response,
     next: NextFunction
   ) {
+    const id_user = req.user?.role === "USER" ? req.user.id : null ;
+
     try {
       if (!req.user) {
         return res.status(500).json({
@@ -44,62 +46,8 @@ class ComplaintController {
           : undefined,
       };
 
-      const result = await this.complaintService.getAllComplaintsAdmin(
-        pagination,
-        filters
-      );
-
-      console.log(result);
-
-      if (typeof result === "string") {
-        return res.status(400).json({
-          success: false,
-          message: result,
-        });
-      }
-
-      res.status(200).json({
-        success: true,
-        message: responses.successGetComplaints,
-        ...result,
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async getAllComplaintsByUser(
-    req: AuthRequest,
-    res: Response,
-    next: NextFunction
-  ) {
-    try {
-      if (!req.user) {
-        return res.status(500).json({
-          success: false,
-          message: "Unauthorized",
-        });
-      }
-
-      const pagination: PaginationParams = {
-        page: req.query.page ? parseInt(req.query.page as string) : undefined,
-        limit: req.query.limit
-          ? parseInt(req.query.limit as string)
-          : undefined,
-      };
-
-      const filters: ComplaintFilters = {
-        search: req.query.search as string,
-        startDate: req.query.startDate
-          ? new Date(req.query.startDate as string)
-          : undefined,
-        endDate: req.query.endDate
-          ? new Date(req.query.endDate as string)
-          : undefined,
-      };
-
-      const result = await this.complaintService.getAllComplaintsByUser(
-        req.user.id,
+      const result = await this.complaintService.getAllComplaints(
+        id_user,
         pagination,
         filters
       );
