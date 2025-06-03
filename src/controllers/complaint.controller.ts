@@ -190,6 +190,7 @@ class ComplaintController {
       // Gabungkan data update, kalau ada foto baru masukkan URL-nya
       const updateData = {
         ...req.body,
+        status: req.body.status === "true" ? true : false,
         ...(photoUrl ? { photo: photoUrl } : {}),
       };
 
